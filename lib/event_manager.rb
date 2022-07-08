@@ -6,6 +6,18 @@ def clean_zipcode(zipcode)
   zipcode.to_s.rjust(5, '0')[0..4]
 end
 
+def clean_phone_num(ph_n)
+  ph_n = ph_n.to_s.tr('^0-9', '')
+  
+  if ph_n.length == 10
+    ph_n.insert(3, '-').insert(-5, '-')
+  elsif ph_n.length == 11 && ph_n[0] == '1'
+    ph_n[1..10].insert(3, '-').insert(-5, '-')
+  else
+    ''
+  end
+end
+
 def legislators_by_zipcode(zip)
   civic_info = Google::Apis::CivicinfoV2::CivicInfoService.new
   civic_info.key = 'AIzaSyClRzDqDh5MsXwnCWi0kOiiBivP6JsSyBw'
@@ -42,6 +54,7 @@ if File.exist?('event_attendees.csv')
     id = row[0]
     name = row[:first_name]
     zipcode = clean_zipcode(row[:zipcode])
+    phone_number = clean_phone_num(row[:homephone])
 
     legislators = legislators_by_zipcode(zipcode)
 
