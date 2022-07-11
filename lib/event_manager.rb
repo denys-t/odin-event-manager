@@ -1,6 +1,7 @@
 require 'csv'
 require 'google/apis/civicinfo_v2'
 require 'erb'
+require 'date'
 
 def clean_zipcode(zipcode)
   zipcode.to_s.rjust(5, '0')[0..4]
@@ -42,6 +43,10 @@ def save_thank_you_letter(id, form_letter)
   end
 end
 
+def most_active_period(datetime_hash)
+  datetime_hash.max_by { |k, v| v }
+end
+
 puts 'Event manager initialized!'
 
 template_letter = File.read('form_letter.erb')
@@ -49,6 +54,8 @@ erb_template = ERB.new template_letter
 
 if File.exist?('event_attendees.csv')
   contents = CSV.open('event_attendees.csv', headers: true, header_converters: :symbol)
+  hour_of_registration = Hash.new(0)
+  day_of_registration = Hash.new(0)
 
   contents.each do |row|
     id = row[0]
@@ -61,5 +68,13 @@ if File.exist?('event_attendees.csv')
     form_letter = erb_template.result(binding)
 
     save_thank_you_letter(id, form_letter)
+
+    datetime_str = row[:regdate]
+    datetime = DateTime.strptime(datetime_str, '%m/%d/%y %H:%M')
+    hour_of_registration[datetime.hour] += 1
+    day_of_registration[datetime.wday] += 1
   end
+
+  puts "The most active time of day is #{most_active_period(hour_of_registration)[0]} hrs"
+  puts "The most ative day is #{Date::DAYNAMES[most_active_period(day_of_registration)[0]]}"
 end
